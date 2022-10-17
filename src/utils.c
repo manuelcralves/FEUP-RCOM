@@ -38,6 +38,7 @@ int sendMessage(int fd, unsigned char adressField, unsigned char controlField) {
   message[4] = FLAG;
   
   return write(fd, message, 5);
+}
 
 int receiveMessage(int fd, unsigned char adressField, unsigned char controlField) {
     enum state current_state = START;

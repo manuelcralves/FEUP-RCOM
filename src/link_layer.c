@@ -1,21 +1,31 @@
 // Link layer protocol implementation
 
 #include "link_layer.h"
+#include "sender.h"
+#include "receiver.h"
+#include "../include/utils.h"
 #include <unistd.h>
 #include <fcntl.h>
 #include <termios.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 // MISC
 #define _POSIX_SOURCE 1 // POSIX compliant source
+
+struct termios oldtio;
+int fd;
+LinkLayerRole role;
+
 
 ////////////////////////////////////////////////
 // LLOPEN
 ////////////////////////////////////////////////
 int llopen(LinkLayer connectionParameters)
 {
-    // TODO
-
     int fd = open (connectionParameters.serialPort,O_RDWR | O_NOCTTY);
+    role = connectionParameters.role;
 
     if (fd < 0) {
         perror(connectionParameters.serialPort);
@@ -87,7 +97,33 @@ int llread(unsigned char *packet)
 ////////////////////////////////////////////////
 int llclose(int showStatistics)
 {
-    // TODO
+    switch(role) {
+        case LlTx:
+            if (sendMessage(fd,A_SND,DISC) < 0) return -1; // the sender send the DISC command
+            if (receiveMessage(fd,A_RCVR,DISC) < 0) return -1; // the sender receives the DISC command sent by the receiver
 
-    return 1;
+            if (sendMessage(fd,A_SND,UAKN) < 0) return -1; // the sender sends UA 
+            sleep(1);
+            break;
+        case LlRx:
+            if (receiveMessage(fd,A_SND,DISC) < 0) return -1; // the receiver receives the DISC command
+            if (sendMessage(fd,A_RCVR,DISC) < 0) return -1; // the receiver send the response to the sender
+
+            if (receiveMessage(fd,A_SND,UAKN) < 0) return -1; // the receiver receives UA
+            break;
+    }
+
+    if ( tcsetattr(fd, TCSANOW, &oldtio) == -1) {
+        perror("tcsetattr");
+        exit(-1);
+    }
+
+    //TODO 
+
+    if (showStatistics) {
+        printf("show statistics");
+    }
+    close(fd);
+
+    return 0;
 }

@@ -2,13 +2,15 @@
 #ifndef _UTILS_H
 #define _UTILS_H
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 #define FLAG       0x7E
-#define TRANSMITTER 1
-#define RECEIVER    0
 #define BCC(x, y)  x ^ y
 #define A_RCVR     0x01
 #define A_SND      0x03
+#define UAKN       0x07
 #define DISC       0x0B
 
 
