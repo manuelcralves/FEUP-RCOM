@@ -5,6 +5,4 @@
 #include <signal.h>
 #include "./utils.h"
 
-int receiveControl(int fd, unsigned char controlField, unsigned char response);
-
 #endif

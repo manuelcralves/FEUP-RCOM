@@ -2,6 +2,9 @@
 #ifndef _UTILS_H
 #define _UTILS_H
 
+#include <unistd.h>
+#include <fcntl.h>
+#include <termios.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -16,7 +19,7 @@
 
 enum state {START, FLAG_RCV, A_RCV, C_RCV, BCC_OK, STOP};
 
-void stateMachineSU(char byteReceived, enum state * currentState, unsigned char addressField, unsigned char controlField);
+void stateMachine(char byteReceived, enum state * currentState, unsigned char addressField, unsigned char controlField);
 
 int sendMessage(int fd, unsigned char adressField, unsigned char controlField);
 

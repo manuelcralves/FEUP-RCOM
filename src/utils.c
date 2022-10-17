@@ -1,6 +1,6 @@
 #include "../include/utils.h"
 
-void stateMachineSU(char byteReceived, enum state * currentState, unsigned char addressField, unsigned char controlField) {
+void stateMachine(char byteReceived, enum state * currentState, unsigned char addressField, unsigned char controlField) {
   switch (*currentState) {
     case START:
       if(byteReceived == FLAG) *currentState = FLAG_RCV;
@@ -47,7 +47,7 @@ int receiveMessage(int fd, unsigned char adressField, unsigned char controlField
     do {
         if((res = read(fd, buf, 1)) < 0) return -1;
         if (!res) continue;
-        stateMachineSU(buf[0], &current_state, adressField, controlField);
+        stateMachine(buf[0], &current_state, adressField, controlField);
     } while(current_state != STOP);
 
     return res;

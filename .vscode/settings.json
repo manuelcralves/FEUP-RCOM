@@ -2,6 +2,8 @@
     "files.associations": {
         "termios.h": "c",
         "string.h": "c",
-        "stdlib.h": "c"
-    }
+        "stdlib.h": "c",
+        "sender.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
 }
