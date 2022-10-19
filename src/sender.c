@@ -9,6 +9,12 @@ int counter;
 unsigned int flag;
 unsigned int seqNum = 0;
 
+void alarmHandler(){
+	printf("alarme #%d\n", counter);
+	flag = 1;
+	counter++;
+}
+
 unsigned char* stuffing(const unsigned char *buf, int *bufSize) {
     unsigned char *newBuf = malloc(sizeof(char)*255);
 

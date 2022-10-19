@@ -20,6 +20,7 @@
 #define RR(x)      x << 7 | 0x05
 #define REJ(x)     x << 7 | 0x01
 #define SEQ_NUM(x) x << 6
+#define HEADER_BYTES 6
 
 
 enum state {START, FLAG_RCV, A_RCV, C_RCV, BCC_OK, STOP};

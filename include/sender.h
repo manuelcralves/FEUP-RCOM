@@ -5,6 +5,8 @@
 #include <signal.h>
 #include "./utils.h"
 
+void alarmHandler();
+
 unsigned char* stuffing(const unsigned char *buf, int *bufSize);
 
 void stateMachineSender(unsigned char byteReceived, enum state * currentState, unsigned char * controlField);

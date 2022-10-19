@@ -17,6 +17,7 @@
 struct termios oldtio;
 int fd;
 LinkLayerRole role;
+extern unsigned int seqNum;
 
 ////////////////////////////////////////////////
 // LLOPEN
@@ -26,6 +27,7 @@ int llopen(LinkLayer connectionParameters)
     int fd = open (connectionParameters.serialPort,O_RDWR | O_NOCTTY);
     role = connectionParameters.role;
 
+    (void) signal(SIGALRM, alarmHandler);
 
     if (fd < 0) {
         perror(connectionParameters.serialPort);
@@ -76,9 +78,28 @@ int llopen(LinkLayer connectionParameters)
 // LLWRITE
 ////////////////////////////////////////////////
 int llwrite(const unsigned char *buf, int bufSize)
-{
-    // TODO
-    
+{   
+    unsigned int newBufSize = bufSize + HEADER_BYTES;
+    unsigned char newBuf[newBufSize];
+
+    newBuf[0] = FLAG;
+    newBuf[1] = A_SND;
+    newBuf[2] = SEQ_NUM(seqNum);
+    newBuf[3] = BCC(A_SND,newBuf[2]);
+
+    unsigned int bccData = 0x0;
+    for (size_t i = 0; i < bufSize;i++){
+        unsigned char dataByte = buf[i];
+        newBuf[4+i] = dataByte;
+        bccData = bccData ^ dataByte;
+    }   
+
+    newBuf[newBufSize-2] = bccData;
+    newBuf[newBufSize-1] = FLAG;
+
+    unsigned char *stuffed = malloc(sizeof(char)*(newBufSize*3));
+    stuffed = stuffing(newBuf,newBufSize);
+
     return 0;
 }
 
@@ -87,7 +108,7 @@ int llwrite(const unsigned char *buf, int bufSize)
 ////////////////////////////////////////////////
 int llread(unsigned char *packet)
 {
-    // TODO
+
 
     return 0;
 }
