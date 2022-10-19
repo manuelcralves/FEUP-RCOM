@@ -18,7 +18,6 @@ struct termios oldtio;
 int fd;
 LinkLayerRole role;
 
-
 ////////////////////////////////////////////////
 // LLOPEN
 ////////////////////////////////////////////////
@@ -26,6 +25,7 @@ int llopen(LinkLayer connectionParameters)
 {
     int fd = open (connectionParameters.serialPort,O_RDWR | O_NOCTTY);
     role = connectionParameters.role;
+
 
     if (fd < 0) {
         perror(connectionParameters.serialPort);
@@ -69,7 +69,7 @@ int llopen(LinkLayer connectionParameters)
 
     close(fd);
 
-    return 0;
+    return 1;
 }
 
 ////////////////////////////////////////////////
@@ -125,5 +125,5 @@ int llclose(int showStatistics)
     }
     close(fd);
 
-    return 0;
+    return 1;
 }

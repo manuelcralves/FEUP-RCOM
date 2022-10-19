@@ -11,12 +11,15 @@
 
 #define FLAG       0x7E
 #define ESC        0x7D
-#define STUFF(x)   x ^ 0x20
+#define STUFF(x)   x ^ (0x20)
 #define BCC(x, y)  x ^ y
 #define A_RCVR     0x01
 #define A_SND      0x03
 #define UAKN       0x07
 #define DISC       0x0B
+#define RR(x)      x << 7 | 0x05
+#define REJ(x)     x << 7 | 0x01
+#define SEQ_NUM(x) x << 6
 
 
 enum state {START, FLAG_RCV, A_RCV, C_RCV, BCC_OK, STOP};
