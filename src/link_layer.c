@@ -79,7 +79,7 @@ int llopen(LinkLayer connectionParameters)
 ////////////////////////////////////////////////
 int llwrite(const unsigned char *buf, int bufSize)
 {   
-    unsigned int newBufSize = bufSize + HEADER_BYTES;
+    int newBufSize = bufSize + HEADER_BYTES;
     unsigned char newBuf[newBufSize];
 
     newBuf[0] = FLAG;
@@ -98,10 +98,12 @@ int llwrite(const unsigned char *buf, int bufSize)
     newBuf[newBufSize-1] = FLAG;
 
     unsigned char *stuffed = malloc(sizeof(char)*(newBufSize*3));
-    stuffed = stuffing(newBuf,newBufSize);
+    stuffed = stuffing(newBuf,&newBufSize);
 
     int res = sendFrame(stuffed,newBufSize);
-    return 0;
+
+    free(stuffed);
+    return res;
 }
 
 ////////////////////////////////////////////////
@@ -109,9 +111,28 @@ int llwrite(const unsigned char *buf, int bufSize)
 ////////////////////////////////////////////////
 int llread(unsigned char *packet)
 {
+    int res;
+    unsigned char buffer[255];
 
+    if ((res = receiveFrame(buffer)) < 0) return -1; /*receiveFrame puts the frame in the buffer var and returns its size*/
 
-    return 0;
+    unsigned char* destuffed;
+    destuffed = destuffing(buffer,&res); 
+
+    if (isHeaderWrong(destuffed)) return 0;
+
+    if(isDuplicate(destuffed)) return 0;
+
+    if (isSeqNumWrong(destuffed)) return 0;
+
+    if (isDataBccWrong(destuffed,res)) return 0;
+
+    if (seqNum == 0) seqNum = 1;
+    if (seqNum == 1) seqNum = 0;
+
+    sendInfoFrame(fd,A_RCVR,RR(seqNum));
+
+    return res - HEADER_BYTES;
 }
 
 ////////////////////////////////////////////////

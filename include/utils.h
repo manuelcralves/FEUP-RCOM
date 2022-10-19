@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 
+
 #define FLAG       0x7E
 #define ESC        0x7D
 #define STUFF(x)   x ^ (0x20)
@@ -30,6 +31,14 @@ void stateMachine(char byteReceived, enum state * currentState, unsigned char ad
 int sendInfoFrame(int fd, unsigned char adressField, unsigned char controlField);
 
 int receiveInfoFrame(int fd, unsigned char adressField, unsigned char controlField);
+
+int isHeaderWrong(unsigned char *buf);
+
+int isDuplicate(unsigned char *buf);
+
+int isSeqNumWrong(unsigned char *buf);
+
+int isDataBccWrong(unsigned char *buf, int bufSize);
 
 
 #endif /*_UTILS_H*/

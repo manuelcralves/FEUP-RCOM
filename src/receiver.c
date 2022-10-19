@@ -58,7 +58,7 @@ void stateMachineReceiver(char byteReceived, enum state * currentState, int * pr
   }
 }
 
-int receiveFrame(unsigned char* frame, int frameSize) {
+int receiveFrame(unsigned char* frame) {
     enum state currentState = START;
     char buf[255];
     int res =0, currentIndex= 0;

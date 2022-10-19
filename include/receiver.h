@@ -7,4 +7,8 @@
 
 unsigned char* destuffing(const unsigned char* buf, int *bufSize);
 
+void stateMachineReceiver(char byteReceived, enum state * currentState, int * prevWasFlag);
+
+int receiveFrame(unsigned char* frame);
+
 #endif
