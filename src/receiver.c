@@ -28,6 +28,6 @@ unsigned char* destuffing(const unsigned char* buf, int *bufSize) {
     }
 
     newBuf[index] = FLAG;
-    bufSize = index;
+    bufSize = index+1;
     return newBuf;
 }
