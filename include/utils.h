@@ -23,9 +23,9 @@ enum state {START, FLAG_RCV, A_RCV, C_RCV, BCC_OK, STOP};
 
 void stateMachine(char byteReceived, enum state * currentState, unsigned char addressField, unsigned char controlField);
 
-int sendMessage(int fd, unsigned char adressField, unsigned char controlField);
+int sendInfoFrame(int fd, unsigned char adressField, unsigned char controlField);
 
-int receiveMessage(int fd, unsigned char adressField, unsigned char controlField);
+int receiveInfoFrame(int fd, unsigned char adressField, unsigned char controlField);
 
 
 #endif /*_UTILS_H*/

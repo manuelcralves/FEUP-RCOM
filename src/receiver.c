@@ -8,7 +8,7 @@ unsigned char* destuffing(const unsigned char* buf, int *bufSize) {
 
     int index = 1;
 
-    for (size_t i = 1; i < bufSize-1; i++){
+    for (size_t i = 1; i < (*bufSize)-1; i++){
         if (buf[i] == ESC){
             i++;
 
@@ -28,6 +28,6 @@ unsigned char* destuffing(const unsigned char* buf, int *bufSize) {
     }
 
     newBuf[index] = FLAG;
-    bufSize = index+1;
+    *bufSize = index+1;
     return newBuf;
 }

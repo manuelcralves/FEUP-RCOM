@@ -99,17 +99,17 @@ int llclose(int showStatistics)
 {
     switch(role) {
         case LlTx:
-            if (sendMessage(fd,A_SND,DISC) < 0) return -1; // the sender send the DISC command
-            if (receiveMessage(fd,A_RCVR,DISC) < 0) return -1; // the sender receives the DISC command sent by the receiver
+            if (sendInfoFrame(fd,A_SND,DISC) < 0) return -1; // the sender send the DISC command
+            if (receiveInfoFrame(fd,A_RCVR,DISC) < 0) return -1; // the sender receives the DISC command sent by the receiver
 
-            if (sendMessage(fd,A_SND,UAKN) < 0) return -1; // the sender sends UA 
+            if (sendInfoFrame(fd,A_SND,UAKN) < 0) return -1; // the sender sends UA 
             sleep(1);
             break;
         case LlRx:
-            if (receiveMessage(fd,A_SND,DISC) < 0) return -1; // the receiver receives the DISC command
-            if (sendMessage(fd,A_RCVR,DISC) < 0) return -1; // the receiver send the response to the sender
+            if (receiveInfoFrame(fd,A_SND,DISC) < 0) return -1; // the receiver receives the DISC command
+            if (sendInfoFrame(fd,A_RCVR,DISC) < 0) return -1; // the receiver send the response to the sender
 
-            if (receiveMessage(fd,A_SND,UAKN) < 0) return -1; // the receiver receives UA
+            if (receiveInfoFrame(fd,A_SND,UAKN) < 0) return -1; // the receiver receives UA
             break;
     }
 

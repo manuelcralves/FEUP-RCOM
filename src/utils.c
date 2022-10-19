@@ -28,7 +28,7 @@ void stateMachine(char byteReceived, enum state * currentState, unsigned char ad
   }
 }
 
-int sendMessage(int fd, unsigned char adressField, unsigned char controlField) {
+int sendInfoFrame(int fd, unsigned char adressField, unsigned char controlField) {
   unsigned char message[5];
   
   message[0] = FLAG;
@@ -40,7 +40,7 @@ int sendMessage(int fd, unsigned char adressField, unsigned char controlField) {
   return write(fd, message, 5);
 }
 
-int receiveMessage(int fd, unsigned char adressField, unsigned char controlField) {
+int receiveInfoFrame(int fd, unsigned char adressField, unsigned char controlField) {
     enum state current_state = START;
     char buf[255];
     int res = 0;
