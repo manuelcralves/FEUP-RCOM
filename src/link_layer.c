@@ -100,6 +100,7 @@ int llwrite(const unsigned char *buf, int bufSize)
     unsigned char *stuffed = malloc(sizeof(char)*(newBufSize*3));
     stuffed = stuffing(newBuf,newBufSize);
 
+    int res = sendFrame(stuffed,newBufSize);
     return 0;
 }
 
