@@ -10,6 +10,8 @@
 #include <string.h>
 
 #define FLAG       0x7E
+#define ESC        0x7D
+#define STUFF(x)   x ^ 0x20
 #define BCC(x, y)  x ^ y
 #define A_RCVR     0x01
 #define A_SND      0x03
