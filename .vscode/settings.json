@@ -3,7 +3,9 @@
         "termios.h": "c",
         "string.h": "c",
         "stdlib.h": "c",
-        "sender.h": "c"
+        "sender.h": "c",
+        "unistd.h": "c",
+        "typeinfo": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }

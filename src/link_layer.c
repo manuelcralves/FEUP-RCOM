@@ -15,18 +15,19 @@
 #define _POSIX_SOURCE 1 // POSIX compliant source
 
 struct termios oldtio;
-int fd;
-LinkLayerRole role;
+extern int fd;
 extern unsigned int seqNum;
+extern LinkLayerRole myRole;
 
 ////////////////////////////////////////////////
 // LLOPEN
 ////////////////////////////////////////////////
 int llopen(LinkLayer connectionParameters)
-{
-    int fd = open (connectionParameters.serialPort,O_RDWR | O_NOCTTY);
-    role = connectionParameters.role;
+{   
+    
 
+    fd = open (connectionParameters.serialPort,O_RDWR | O_NOCTTY);
+    printf("fd : %d\n",fd);
     (void) signal(SIGALRM, alarmHandler);
 
     if (fd < 0) {
@@ -34,7 +35,6 @@ int llopen(LinkLayer connectionParameters)
         exit(-1);
     }
 
-    struct termios oldtio;
     struct termios newtio;
 
     //Save current port settings
@@ -69,9 +69,20 @@ int llopen(LinkLayer connectionParameters)
         exit(-1);
     }
 
-    close(fd);
+    if (connectionParameters.role == LlTx){
+        if (sendInfoFrame(fd,A_SND,SET) < 0) return -1;
+        if (receiveInfoFrame(fd,A_RCVR,UAKN) < 0) return -1;
+        return fd;
+    }
 
-    return 1;
+    if (connectionParameters.role == LlRx) {
+        if (receiveInfoFrame(fd,A_SND,SET)<0) return -1;
+        if (sendInfoFrame(fd,A_RCVR,UAKN) < 0) return -1;
+        return fd;
+    }
+
+    return -1;
+    
 }
 
 ////////////////////////////////////////////////
@@ -121,11 +132,11 @@ int llread(unsigned char *packet)
 
     if (isHeaderWrong(destuffed)) return 0;
 
-    if(isDuplicate(destuffed)) return 0;
+    if(isDuplicate(fd,destuffed)) return 0;
 
     if (isSeqNumWrong(destuffed)) return 0;
 
-    if (isDataBccWrong(destuffed,res)) return 0;
+    if (isDataBccWrong(fd,destuffed,res)) return 0;
 
     if (seqNum == 0) seqNum = 1;
     if (seqNum == 1) seqNum = 0;
@@ -140,7 +151,7 @@ int llread(unsigned char *packet)
 ////////////////////////////////////////////////
 int llclose(int showStatistics)
 {
-    switch(role) {
+    switch(myRole) {
         case LlTx:
             if (sendInfoFrame(fd,A_SND,DISC) < 0) return -1; // the sender send the DISC command
             if (receiveInfoFrame(fd,A_RCVR,DISC) < 0) return -1; // the sender receives the DISC command sent by the receiver

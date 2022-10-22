@@ -1,7 +1,7 @@
 #include "../include/utils.h"
 
 extern unsigned int seqNum;
-extern int fd;
+
 
 void stateMachine(char byteReceived, enum state * currentState, unsigned char addressField, unsigned char controlField) {
   switch (*currentState) {
@@ -49,6 +49,7 @@ int receiveInfoFrame(int fd, unsigned char adressField, unsigned char controlFie
     int res = 0;
     do {
         if((res = read(fd, buf, 1)) < 0) return -1;
+        printf("res : %d\n",res);
         if (!res) continue;
         stateMachine(buf[0], &current_state, adressField, controlField);
     } while(current_state != STOP);
@@ -63,7 +64,7 @@ int isHeaderWrong(unsigned char *buf) {
   return 0;
 }
 
-int isDuplicate(unsigned char *buf) {
+int isDuplicate(int fd,unsigned char *buf) {
   int prevSeqNum = 0;
   if (seqNum == 0) prevSeqNum = 1;
 
@@ -79,7 +80,7 @@ int isSeqNumWrong(unsigned char *buf) {
   return 0;
 }
 
-int isDataBccWrong(unsigned char *buf, int bufSize) {
+int isDataBccWrong(int fd,unsigned char *buf, int bufSize) {
   unsigned char dataBcc = 0x00;
   for (size_t i = 4; i < bufSize-2;i++){
     dataBcc ^= buf[i];
