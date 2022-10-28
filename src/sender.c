@@ -4,9 +4,9 @@
 
 
 extern int fd;
-extern LinkLayer ll;
+extern int numTries;
 int counter;
-unsigned int flag;
+unsigned int flag = 0;
 unsigned int seqNum = 0;
 
 void alarmHandler(){
@@ -50,31 +50,33 @@ unsigned char* stuffing(const unsigned char *buf, int *bufSize) {
 void stateMachineSender(unsigned char byteReceived, enum state * currentState, unsigned char * controlField) {
   switch (*currentState) {
       case START:
-      if(byteReceived == FLAG) *currentState = FLAG_RCV;
-      break;
-    case FLAG_RCV:
-      if(byteReceived == A_RCVR) *currentState = A_RCV;
-      else if (byteReceived != FLAG) *currentState = START;
-      break;
-    case A_RCV:
-      if(byteReceived == FLAG) *currentState = FLAG_RCV;
-      else if(byteReceived == (RR(1)) || byteReceived == (RR(0)) || byteReceived == (REJ(0)) || byteReceived == (REJ(1))) {
-        *controlField = byteReceived;
-        *currentState = C_RCV;
-      }
-      else *currentState = START;
-      break;
-    case C_RCV:
-      if(byteReceived == FLAG) *currentState = FLAG_RCV;
-      else if(byteReceived == (BCC(A_RCVR, *controlField))) *currentState = BCC_OK;
-      else *currentState = START;
-      break;
-    case BCC_OK:
-      if(byteReceived == FLAG) *currentState = STOP;
-      else *currentState = START;
-      break;
-    default:
-      break;
+        printf("start\n");
+        if(byteReceived == FLAG) *currentState = FLAG_RCV;
+        break;
+      case FLAG_RCV:
+        printf("flag\n");
+        if(byteReceived == A_RCVR) *currentState = A_RCV;
+        else if (byteReceived != FLAG) *currentState = START;
+        break;
+      case A_RCV:
+        if(byteReceived == FLAG) *currentState = FLAG_RCV;
+        else if(byteReceived == (RR(1)) || byteReceived == (RR(0)) || byteReceived == (REJ(0)) || byteReceived == (REJ(1))) {
+          *controlField = byteReceived;
+          *currentState = C_RCV;
+        }
+        else *currentState = START;
+        break;
+      case C_RCV:
+        if(byteReceived == FLAG) *currentState = FLAG_RCV;
+        else if(byteReceived == (BCC(A_RCVR, *controlField))) *currentState = BCC_OK;
+        else *currentState = START;
+        break;
+      case BCC_OK:
+        if(byteReceived == FLAG) *currentState = STOP;
+        else *currentState = START;
+        break;
+      default:
+        break;
   }
 }
 
@@ -96,28 +98,33 @@ int writeInPort(int fd,const void* buf, size_t n) {
 
 int sendFrame(unsigned char* frame, int frameSize) {
     enum state currentState = START;
-    char buf[255];
+    unsigned char buf;
     int resR= 0, resW=0;
-    //alarm flag
+    flag = 0;
     counter = 0;
     unsigned char controlField;
 
     resW = writeInPort(fd,frame,frameSize);
-    alarm(3);
+    printf("resW já stuffed: %d\n",resW);
+
+    alarm(3); // Set alarm to be trigerred in 3s
 
     do {
         if (flag){
+            printf("entrou aqui\n");  
             alarm(3);
             flag = FALSE;
             resW = writeInPort(fd,frame,frameSize);
         }
-
-        resR = read(fd,buf,1);
+        printf("fd: %d\n",fd);
+        resR = read(fd,&buf,1);
+        printf("resR: %d\n",resR);
         if (!resR) continue;
-        stateMachineSender(buf[0],&currentState,&controlField);
+        stateMachineSender(buf,&currentState,&controlField);
+        printf("curr State: %s\n",getState(currentState));
+    } while (currentState != STOP && counter < numTries);
 
-    } while (currentState != STOP && counter <= ll.nRetransmissions);
-
+    printf("curr state : stop \n");
     alarm (0); /*write successfull*/
 
     int nextSeqNum;
@@ -125,7 +132,7 @@ int sendFrame(unsigned char* frame, int frameSize) {
     else nextSeqNum = 0;
 
     if (currentState == STOP) {
-        if (controlField == (REJ(seqNum))) {
+        if (controlField == (REJ(seqNum))) { /* retransmissão */
             return sendFrame(frame,frameSize);
         }
         if (controlField == (RR(nextSeqNum))) {

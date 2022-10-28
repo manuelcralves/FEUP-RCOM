@@ -46,5 +46,7 @@ int isSeqNumWrong(unsigned char *buf);
 
 int isDataBccWrong(int fd,unsigned char *buf, int bufSize);
 
+const char* getState (enum state s);
+
 
 #endif /*_UTILS_H*/

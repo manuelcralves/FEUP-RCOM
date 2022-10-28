@@ -15,9 +15,12 @@
 #define _POSIX_SOURCE 1 // POSIX compliant source
 
 struct termios oldtio;
-extern int fd;
-extern unsigned int seqNum;
-extern LinkLayerRole myRole;
+struct termios newtio;
+int fd;
+extern unsigned int seqNum ;
+int numTries;
+int timeout;
+LinkLayerRole myRole;
 
 ////////////////////////////////////////////////
 // LLOPEN
@@ -25,17 +28,18 @@ extern LinkLayerRole myRole;
 int llopen(LinkLayer connectionParameters)
 {   
     
+    fd = open(connectionParameters.serialPort,O_RDWR | O_NOCTTY);
 
-    fd = open (connectionParameters.serialPort,O_RDWR | O_NOCTTY);
-    printf("fd : %d\n",fd);
+    myRole = connectionParameters.role;
+    timeout = connectionParameters.timeout;
+    numTries = connectionParameters.nRetransmissions;
+
     (void) signal(SIGALRM, alarmHandler);
 
     if (fd < 0) {
         perror(connectionParameters.serialPort);
         exit(-1);
     }
-
-    struct termios newtio;
 
     //Save current port settings
     if (tcgetattr(fd,&oldtio) == -1) {
@@ -52,7 +56,7 @@ int llopen(LinkLayer connectionParameters)
 
     // Set input mode (non-canonical, no echo,...)
     newtio.c_cflag = 0;
-    newtio.c_cc[VTIME] = 5;
+    newtio.c_cc[VTIME] = 1;
     newtio.c_cc[VMIN] = 0;
 
     tcflush(fd,TCIOFLUSH);
@@ -64,18 +68,14 @@ int llopen(LinkLayer connectionParameters)
 
     printf("New termios structure set\n");
 
-    if (tcsetattr(fd,TCSANOW,&oldtio) == -1){
-        perror("tcsetattr");
-        exit(-1);
-    }
 
-    if (connectionParameters.role == LlTx){
+    if (myRole == LlTx){
         if (sendInfoFrame(fd,A_SND,SET) < 0) return -1;
         if (receiveInfoFrame(fd,A_RCVR,UAKN) < 0) return -1;
         return fd;
     }
 
-    if (connectionParameters.role == LlRx) {
+    if (myRole== LlRx) {
         if (receiveInfoFrame(fd,A_SND,SET)<0) return -1;
         if (sendInfoFrame(fd,A_RCVR,UAKN) < 0) return -1;
         return fd;
@@ -124,22 +124,24 @@ int llread(unsigned char *packet)
 {
     int res;
     unsigned char buffer[255];
+    printf("llread\n");
+    printf("fd: %d\n\n",fd);
+    res = receiveFrame(fd,buffer);
+    if (res < 0) return -1; /*receiveFrame puts the frame in the buffer var and returns its size*/
+    printf("destuffing...\n");
+    res = destuffing(buffer,res,packet); 
 
-    if ((res = receiveFrame(buffer)) < 0) return -1; /*receiveFrame puts the frame in the buffer var and returns its size*/
+    if (isHeaderWrong(packet)) return 0;
 
-    unsigned char* destuffed;
-    destuffed = destuffing(buffer,&res); 
+    if(isDuplicate(fd,packet)) return 0;
 
-    if (isHeaderWrong(destuffed)) return 0;
+    if (isSeqNumWrong(packet)) return 0;
 
-    if(isDuplicate(fd,destuffed)) return 0;
-
-    if (isSeqNumWrong(destuffed)) return 0;
-
-    if (isDataBccWrong(fd,destuffed,res)) return 0;
+    if (isDataBccWrong(fd,packet,res)) return 0;
 
     if (seqNum == 0) seqNum = 1;
     if (seqNum == 1) seqNum = 0;
+
 
     sendInfoFrame(fd,A_RCVR,RR(seqNum));
 

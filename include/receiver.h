@@ -5,10 +5,10 @@
 #include <signal.h>
 #include "./utils.h"
 
-unsigned char* destuffing(const unsigned char* buf, int *bufSize);
+int destuffing(const unsigned char* buf, int bufSize, unsigned char* packet);
 
 void stateMachineReceiver(char byteReceived, enum state * currentState, int * prevWasFlag);
 
-int receiveFrame(unsigned char* frame);
+int receiveFrame(int fd,unsigned char* frame);
 
 #endif

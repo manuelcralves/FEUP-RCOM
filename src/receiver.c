@@ -1,37 +1,33 @@
 
 #include "../include/receiver.h"
 
-extern int fd;
-
-unsigned char* destuffing(const unsigned char* buf, int *bufSize) {
-    unsigned char* newBuf = malloc(sizeof(char)*255);  
-
-    newBuf[0] = FLAG;
+int destuffing(const unsigned char* buf, int bufSize,unsigned char* packet) {
+    packet[0] = FLAG;
 
     int index = 1;
 
-    for (size_t i = 1; i < (*bufSize)-1; i++){
+    for (size_t i = 1; i < (bufSize)-1; i++){
         if (buf[i] == ESC){
             i++;
 
             if (buf[i] == (STUFF(FLAG))){
-                newBuf[index] = FLAG;
+                packet[index] = FLAG;
                 index++;
             }
 
             else {
-                newBuf[index] = ESC;
+                packet[index] = ESC;
                 index++;
             }
         }
 
-        newBuf[index] = buf[i];
+        packet[index] = buf[i];
         index++;
     }
 
-    newBuf[index] = FLAG;
-    *bufSize = index+1;
-    return newBuf;
+    packet[index] = FLAG;
+    bufSize = index+1;
+    return bufSize;
 }
 
 void stateMachineReceiver(char byteReceived, enum state * currentState, int * prevWasFlag) {
@@ -58,18 +54,19 @@ void stateMachineReceiver(char byteReceived, enum state * currentState, int * pr
   }
 }
 
-int receiveFrame(unsigned char* frame) {
+int receiveFrame(int fd,unsigned char* frame) {
     enum state currentState = START;
     char buf[255];
     int res =0, currentIndex= 0;
     int prevWasFlag = 0;
 
     do {
-
-        if ((res = read(fd,buf,1) < 0)) {
+        res = read(fd,buf,1);
+        if (res  < 0) {
             return -1;
         }
 
+        printf("res: %d\n",res);
         if (!res) continue;
 
         stateMachineReceiver(buf[0],&currentState,&prevWasFlag);

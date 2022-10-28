@@ -33,7 +33,7 @@ void stateMachine(char byteReceived, enum state * currentState, unsigned char ad
 
 int sendInfoFrame(int fd, unsigned char adressField, unsigned char controlField) {
   unsigned char message[5];
-  
+
   message[0] = FLAG;
   message[1] = adressField;
   message[2] = controlField;
@@ -48,8 +48,8 @@ int receiveInfoFrame(int fd, unsigned char adressField, unsigned char controlFie
     char buf[255];
     int res = 0;
     do {
+        
         if((res = read(fd, buf, 1)) < 0) return -1;
-        printf("res : %d\n",res);
         if (!res) continue;
         stateMachine(buf[0], &current_state, adressField, controlField);
     } while(current_state != STOP);
@@ -87,9 +87,24 @@ int isDataBccWrong(int fd,unsigned char *buf, int bufSize) {
   }
 
   if (buf[bufSize-2] != dataBcc){
+
     sendInfoFrame(fd,A_RCVR,REJ(seqNum));
     return 1;
   }
 
   return 0;
+}
+
+
+const char* getState (enum state s){
+  switch(s)
+  {
+    case START : return "0";
+    case FLAG_RCV : return "1";
+    case A_RCV : return "2";
+    case C_RCV : return "3";
+    case BCC_OK : return "4";
+    case STOP : return "5";
+
+  }
 }
