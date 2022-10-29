@@ -15,15 +15,17 @@ void alarmHandler(){
 	counter++;
 }
 
-unsigned char* stuffing(const unsigned char *buf, int *bufSize) {
-    unsigned char *newBuf = malloc(sizeof(char)*255);
+int stuffing(const unsigned char *buf, int bufSize, unsigned char *newBuf) {
 
     newBuf[0] = FLAG;
     
     int index = 1;
+    int aux = bufSize;
 
-    for (size_t i = 1; i < (*bufSize) -1; i++){
+    for (size_t i = 1; i < (bufSize) -1; i++){
         if (buf[i] == FLAG){
+            aux++;
+            newBuf = realloc(newBuf,aux);
             newBuf[index] = ESC;
             index++;
             newBuf[index] = STUFF(FLAG);
@@ -31,6 +33,8 @@ unsigned char* stuffing(const unsigned char *buf, int *bufSize) {
         }
 
         else if(buf[i] == ESC){
+            aux++;
+            newBuf = realloc(newBuf,aux);
             newBuf[index] = ESC;
             index++;
             newBuf[index] = STUFF(ESC);
@@ -43,24 +47,22 @@ unsigned char* stuffing(const unsigned char *buf, int *bufSize) {
     }
     
     newBuf[index] = FLAG;
-    *bufSize = index+1;
-    return newBuf;
+    return aux;
 }
 
 void stateMachineSender(unsigned char byteReceived, enum state * currentState, unsigned char * controlField) {
   switch (*currentState) {
       case START:
-        printf("start\n");
         if(byteReceived == FLAG) *currentState = FLAG_RCV;
         break;
       case FLAG_RCV:
-        printf("flag\n");
         if(byteReceived == A_RCVR) *currentState = A_RCV;
         else if (byteReceived != FLAG) *currentState = START;
         break;
       case A_RCV:
         if(byteReceived == FLAG) *currentState = FLAG_RCV;
         else if(byteReceived == (RR(1)) || byteReceived == (RR(0)) || byteReceived == (REJ(0)) || byteReceived == (REJ(1))) {
+
           *controlField = byteReceived;
           *currentState = C_RCV;
         }
@@ -105,31 +107,23 @@ int sendFrame(unsigned char* frame, int frameSize) {
     unsigned char controlField;
 
     resW = writeInPort(fd,frame,frameSize);
-    printf("resW já stuffed: %d\n",resW);
 
     alarm(3); // Set alarm to be trigerred in 3s
 
     do {
         if (flag){
-            printf("entrou aqui\n");  
             alarm(3);
             flag = FALSE;
             resW = writeInPort(fd,frame,frameSize);
         }
-        printf("fd: %d\n",fd);
         resR = read(fd,&buf,1);
-        printf("resR: %d\n",resR);
+        //printf("byte rec: %x\n",buf);
         if (!resR) continue;
         stateMachineSender(buf,&currentState,&controlField);
-        printf("curr State: %s\n",getState(currentState));
     } while (currentState != STOP && counter < numTries);
-
-    printf("curr state : stop \n");
     alarm (0); /*write successfull*/
 
-    int nextSeqNum;
-    if (seqNum == 0) nextSeqNum = 1;
-    else nextSeqNum = 0;
+    int nextSeqNum = (seqNum) ? 0:1;
 
     if (currentState == STOP) {
         if (controlField == (REJ(seqNum))) { /* retransmissão */

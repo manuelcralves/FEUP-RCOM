@@ -38,13 +38,13 @@ int sendInfoFrame(int fd, unsigned char adressField, unsigned char controlField)
 
 int receiveInfoFrame(int fd, unsigned char adressField, unsigned char controlField);
 
-int isHeaderWrong(unsigned char *buf);
+int isHeaderWrong(unsigned char *buf,int seqNum);
 
-int isDuplicate(int fd,unsigned char *buf);
+int isDuplicate(int fd,unsigned char *buf,int seqNum);
 
-int isSeqNumWrong(unsigned char *buf);
+int isSeqNumWrong(unsigned char *buf,int seqNum);
 
-int isDataBccWrong(int fd,unsigned char *buf, int bufSize);
+int isDataBccWrong(int fd,unsigned char *buf, int bufSize,int seqNum);
 
 const char* getState (enum state s);
 

@@ -13,21 +13,19 @@ int destuffing(const unsigned char* buf, int bufSize,unsigned char* packet) {
             if (buf[i] == (STUFF(FLAG))){
                 packet[index] = FLAG;
                 index++;
+                continue;
             }
-
-            else {
-                packet[index] = ESC;
-                index++;
-            }
+            packet[index] = ESC;
+            index++;
+            continue;
         }
 
         packet[index] = buf[i];
         index++;
     }
 
-    packet[index] = FLAG;
-    bufSize = index+1;
-    return bufSize;
+    packet[index++] = FLAG;
+    return index;
 }
 
 void stateMachineReceiver(char byteReceived, enum state * currentState, int * prevWasFlag) {
@@ -66,7 +64,6 @@ int receiveFrame(int fd,unsigned char* frame) {
             return -1;
         }
 
-        printf("res: %d\n",res);
         if (!res) continue;
 
         stateMachineReceiver(buf[0],&currentState,&prevWasFlag);

@@ -1,8 +1,5 @@
 #include "../include/utils.h"
 
-extern unsigned int seqNum;
-
-
 void stateMachine(char byteReceived, enum state * currentState, unsigned char addressField, unsigned char controlField) {
   switch (*currentState) {
     case START:
@@ -57,14 +54,14 @@ int receiveInfoFrame(int fd, unsigned char adressField, unsigned char controlFie
     return res;
 }
 
-int isHeaderWrong(unsigned char *buf) {
+int isHeaderWrong(unsigned char *buf, int seqNum) {
   if (buf[0] != FLAG || buf[1] != A_SND || buf[3] != (BCC(A_SND,SEQ_NUM(seqNum)))){
     return 1;
   }
   return 0;
 }
 
-int isDuplicate(int fd,unsigned char *buf) {
+int isDuplicate(int fd,unsigned char *buf,int seqNum) {
   int prevSeqNum = 0;
   if (seqNum == 0) prevSeqNum = 1;
 
@@ -75,19 +72,21 @@ int isDuplicate(int fd,unsigned char *buf) {
   return 0;
 }
 
-int isSeqNumWrong(unsigned char *buf) {
+int isSeqNumWrong(unsigned char *buf,int seqNum) {
   if (buf[2] != SEQ_NUM(seqNum)) return 1;
   return 0;
 }
 
-int isDataBccWrong(int fd,unsigned char *buf, int bufSize) {
+int isDataBccWrong(int fd,unsigned char *buf, int bufSize,int seqNum) {
   unsigned char dataBcc = 0x00;
+  printf("------\n");
   for (size_t i = 4; i < bufSize-2;i++){
+    printf("%x ",buf[i]);
     dataBcc ^= buf[i];
   }
-
+  printf("%x\n",dataBcc);
   if (buf[bufSize-2] != dataBcc){
-
+    printf("entrou aqui\n");
     sendInfoFrame(fd,A_RCVR,REJ(seqNum));
     return 1;
   }

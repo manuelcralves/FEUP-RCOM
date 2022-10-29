@@ -7,7 +7,7 @@
 
 void alarmHandler();
 
-unsigned char* stuffing(const unsigned char *buf, int *bufSize);
+int stuffing(const unsigned char *buf, int bufSize,unsigned char *newBuf);
 
 void stateMachineSender(unsigned char byteReceived, enum state * currentState, unsigned char * controlField);
 

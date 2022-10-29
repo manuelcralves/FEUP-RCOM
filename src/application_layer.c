@@ -24,7 +24,7 @@ LinkLayerRole getRole(const char *role)
 
 int appRead (int fd, LinkLayer ll, const char *name) {
     unsigned char *buffer = malloc(1000);
-    int res, currentIndex = 0;
+    int res, currentIndex = 4;
     off_t fileLengthStart = 0, currentPosition = 0, dataLength = 0, fileLengthEnd = 0;
     unsigned int nameSize = 0;
 
@@ -40,8 +40,6 @@ int appRead (int fd, LinkLayer ll, const char *name) {
         exit(-1);
     }
 
-    for (int i = 0; i <18;i++){printf("%x\n",buffer[i]);}
-
     if (buffer[currentIndex++] != START_PKT){
         perror("start packet");
         exit(-1);
@@ -53,12 +51,14 @@ int appRead (int fd, LinkLayer ll, const char *name) {
         exit(-1);
     }
 
-    int length = buffer[currentIndex++];
-
+    int length = buffer[currentIndex];
+    printf("length : %d\n",length);
     for (size_t i = 0; i < length;i++){
-        fileLengthStart = (fileLengthStart*256) + buffer[currentIndex++]; /* hexa to dec*/
+        fileLengthStart <<= 8;
+        fileLengthStart += buffer[currentIndex++];
+        //fileLengthStart = (fileLengthStart*256) + buffer[currentIndex++]; /* hexa to dec*/
     }
-
+    currentIndex += length;
     /*File name*/
 
     if (buffer[currentIndex++] != FILE_NAME){
@@ -72,9 +72,10 @@ int appRead (int fd, LinkLayer ll, const char *name) {
         nameToCompare[i] = buffer[currentIndex++];
     }
     
-
+    printf("FIle length start: %d\n",fileLengthStart);
     while (currentPosition != fileLengthStart){
-        if ((res = llread(buffer)) < 0) {
+        res = llread(buffer);
+        if (res  < 0) {
             free(nameToCompare);
             fclose(receptorFptr);
             perror("llread");
@@ -83,11 +84,12 @@ int appRead (int fd, LinkLayer ll, const char *name) {
 
         if (!res) continue;
 
-        currentIndex = 0;
+        currentIndex = 4;
+        
         if (buffer[currentIndex++] != DATA_PKT) {
             free(nameToCompare);
             fclose(receptorFptr);
-            perror("FIle not fully received");
+            perror("File not fully received");
             exit(-1);
         }
 
@@ -101,7 +103,7 @@ int appRead (int fd, LinkLayer ll, const char *name) {
         }
 
         currentPosition += dataLength;
-
+        printf("currPOs: %d\n",currentPosition);
         if (fwrite(data,dataLength,1,receptorFptr) < 0){
             free(data);
             free(nameToCompare);
@@ -115,13 +117,13 @@ int appRead (int fd, LinkLayer ll, const char *name) {
     }
 
     /*Receive end packet*/
-    currentIndex = 0;
+    currentIndex = 4;
     if ((res = llread(buffer)) < 0) {
         free(nameToCompare);
         perror("llread");
         exit(-1);
     }
-
+    
     if (buffer[currentIndex++] != END_PKT){
         free(nameToCompare);
         perror("WRong type");
@@ -135,6 +137,7 @@ int appRead (int fd, LinkLayer ll, const char *name) {
     }
 
     if (fileLengthEnd != fileLengthStart){
+        printf("Ola\n");
         free(nameToCompare);
         perror("Wrong length");
         exit(-1);
@@ -160,7 +163,7 @@ int appRead (int fd, LinkLayer ll, const char *name) {
             exit(-1);
         }
     }
-
+    printf("ola");
     free(nameToCompare);
     if (llclose(fd) < 0) {
         return -1;
@@ -203,9 +206,11 @@ int appWrite(int fd, LinkLayer ll,const char * name) {
     controlPacket[currentIndex++] = FILE_SIZE; /* Type*/
     controlPacket[currentIndex] = countBytes; /*Length , number of bytes needed to represent the file length*/
 
+    auxFileSize = fileSize;
+
     for (size_t i = controlPacket[currentIndex++]; i > 0;i--){
-        controlPacket[currentIndex++] = fileSize & 0xFF;
-        fileSize = fileSize >> 8;
+        controlPacket[currentIndex++] = auxFileSize & 0xFF;
+        auxFileSize = auxFileSize >> 8;
     }
 
     controlPacket[currentIndex++] = FILE_NAME;
@@ -214,34 +219,36 @@ int appWrite(int fd, LinkLayer ll,const char * name) {
         controlPacket[currentIndex++] = name[i];
     }
 
-    printf("vai escrever controlPacket com file size, file name , tamanho : %d\n",currentIndex);
     /* Send start packet*/
     llwrite(controlPacket,currentIndex);
-    printf("ja escreveu control packet");
+
     unsigned char *data = malloc(500);
     off_t currentPosition = 0;
 
     fseek(transmissorFptr,0,SEEK_SET);
+
     /* Send data packets */
-    
     while (currentPosition != fileSize) {
-        if ((resR = fread(data+4,1,496,transmissorFptr)) < 0) {
+        resR = fread(data+4,1,496,transmissorFptr);
+        if (resR < 0) {
             free(data);
             exit(-1);
         }
-        printf("resR do fichiero penguin.gif: %d",resR);
+
         data[0] = DATA_PKT;
         data[1] = seqNum % 255;
         data[2] = (resR/256);
         data[3] = (resR % 256);
 
-        if((resW = llwrite(data,(256*data[2] + data[3]) + 4)) < 0){
+        resW = llwrite(data,resR+4);
+        if(resW < 0){
             free(data);
             exit(-1);
         }
-
+        printf("resW da app layer: %d\n",resW);
         currentPosition += resR;
         seqNum++;
+        fseek(transmissorFptr, 0, SEEK_CUR);
     }
 
     controlPacket[0] = END_PKT;

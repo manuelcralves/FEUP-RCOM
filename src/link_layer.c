@@ -90,26 +90,32 @@ int llopen(LinkLayer connectionParameters)
 ////////////////////////////////////////////////
 int llwrite(const unsigned char *buf, int bufSize)
 {   
+    
     int newBufSize = bufSize + HEADER_BYTES;
     unsigned char newBuf[newBufSize];
-
+    printf("seqNum : %d\n",seqNum);
     newBuf[0] = FLAG;
     newBuf[1] = A_SND;
     newBuf[2] = SEQ_NUM(seqNum);
     newBuf[3] = BCC(A_SND,newBuf[2]);
 
-    unsigned int bccData = 0x0;
+    unsigned char bccData = 0x00;
     for (size_t i = 0; i < bufSize;i++){
         unsigned char dataByte = buf[i];
+        printf("%x ",dataByte);
         newBuf[4+i] = dataByte;
         bccData = bccData ^ dataByte;
     }   
 
     newBuf[newBufSize-2] = bccData;
     newBuf[newBufSize-1] = FLAG;
-
-    unsigned char *stuffed = malloc(sizeof(char)*(newBufSize*3));
-    stuffed = stuffing(newBuf,&newBufSize);
+    printf("\n-----\n");
+    //for (int i = 0; i < newBufSize;i++){printf("%x ",newBuf[i]);}
+    printf("antes de dar stuff tamanho : %d\n",newBufSize);
+    unsigned char *stuffed = malloc(newBufSize);
+    newBufSize = stuffing(newBuf,newBufSize,stuffed);
+    printf("depois de dar stuff tamanho : %d\n",newBufSize);
+    printf("-----\n");
 
     int res = sendFrame(stuffed,newBufSize);
 
@@ -123,26 +129,38 @@ int llwrite(const unsigned char *buf, int bufSize)
 int llread(unsigned char *packet)
 {
     int res;
-    unsigned char buffer[255];
-    printf("llread\n");
-    printf("fd: %d\n\n",fd);
-    res = receiveFrame(fd,buffer);
-    if (res < 0) return -1; /*receiveFrame puts the frame in the buffer var and returns its size*/
+    unsigned char buffer[1000];
+
+    res = receiveFrame(fd,buffer);/*receiveFrame puts the frame in the buffer var and returns its size*/
+    
+    if (res < 0) {
+        return -1; 
+        printf("res < 1");
+    }
     printf("destuffing...\n");
-    res = destuffing(buffer,res,packet); 
+    res = destuffing(buffer,res,packet);
+    printf("depois de dar destuff: %d\n",res);
+    printf("o numero de seq é : %d\n",seqNum);
+    for (int i = 0; i < res;i++) {printf("%x ",packet[i]);}
+    printf("\n");
+    unsigned char prevSequenceNumber = (seqNum) ? 0:1;
 
-    if (isHeaderWrong(packet)) return 0;
+    /*Wrong header - ignore*/
+    if (isHeaderWrong(packet,seqNum)) return 0;
 
-    if(isDuplicate(fd,packet)) return 0;
+    /*Duplicate frame - ignore*/
+    if(isDuplicate(fd,packet,seqNum)) return 0;
 
-    if (isSeqNumWrong(packet)) return 0;
+    /*Wrong seq Num - ignore*/
+    if (isSeqNumWrong(packet,seqNum)) return 0;
 
-    if (isDataBccWrong(fd,packet,res)) return 0;
-
-    if (seqNum == 0) seqNum = 1;
-    if (seqNum == 1) seqNum = 0;
-
-
+    /*Wrong BCC*/
+    if (isDataBccWrong(fd,packet,res,seqNum)) return 0;
+    
+    seqNum = prevSequenceNumber;
+    
+    /*Correct frame*/
+    printf("manda RR do prox: %d\n",seqNum);
     sendInfoFrame(fd,A_RCVR,RR(seqNum));
 
     return res - HEADER_BYTES;
