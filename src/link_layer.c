@@ -139,7 +139,6 @@ int llread(unsigned char *packet)
     }
     printf("destuffing...\n");
     res = destuffing(buffer,res,packet);
-    printf("depois de dar destuff: %d\n",res);
     printf("o numero de seq é : %d\n",seqNum);
     for (int i = 0; i < res;i++) {printf("%x ",packet[i]);}
     printf("\n");

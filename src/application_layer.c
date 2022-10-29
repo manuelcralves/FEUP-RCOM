@@ -51,12 +51,16 @@ int appRead (int fd, LinkLayer ll, const char *name) {
         exit(-1);
     }
 
-    int length = buffer[currentIndex++];
+    int length = buffer[currentIndex];
+    currentIndex += length;
+
 
     for (size_t i = 0; i < length;i++){
-        fileLengthStart = (fileLengthStart*256) + buffer[currentIndex++]; /* hexa to dec*/
+        fileLengthStart = (fileLengthStart*256) + buffer[currentIndex--]; /* hexa to dec*/
     }
 
+    currentIndex += length+1;
+    printf("file length start: %d\n",fileLengthStart);
     /*File name*/
 
     if (buffer[currentIndex++] != FILE_NAME){
@@ -128,14 +132,25 @@ int appRead (int fd, LinkLayer ll, const char *name) {
         exit(-1);
     }
 
+    if (buffer[currentIndex++] != FILE_SIZE){
+        free(nameToCompare);
+        perror("Wrong type file");
+        exit(-1);
+    }
+    
     /*File length*/
-    length = buffer[currentIndex++];
+    length = buffer[currentIndex];
+    currentIndex += length;
+    
     for (size_t i = 0; i < length;i++){
-        fileLengthEnd = (fileLengthEnd * 256) + buffer[currentIndex++]; // hexa to dec
+        printf("%x ",buffer[currentIndex]);
+        fileLengthEnd = (fileLengthEnd * 256) + buffer[currentIndex--]; // hexa to dec
     }
 
+    currentIndex += length +1;
+    printf("file length end: %d\n",fileLengthEnd);
+
     if (fileLengthEnd != fileLengthStart){
-        printf("Ola\n");
         free(nameToCompare);
         perror("Wrong length");
         exit(-1);
@@ -161,7 +176,7 @@ int appRead (int fd, LinkLayer ll, const char *name) {
             exit(-1);
         }
     }
-    printf("ola");
+    
     free(nameToCompare);
     if (llclose(fd) < 0) {
         return -1;
