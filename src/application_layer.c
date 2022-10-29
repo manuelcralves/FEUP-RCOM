@@ -51,14 +51,12 @@ int appRead (int fd, LinkLayer ll, const char *name) {
         exit(-1);
     }
 
-    int length = buffer[currentIndex];
-    printf("length : %d\n",length);
+    int length = buffer[currentIndex++];
+
     for (size_t i = 0; i < length;i++){
-        fileLengthStart <<= 8;
-        fileLengthStart += buffer[currentIndex++];
-        //fileLengthStart = (fileLengthStart*256) + buffer[currentIndex++]; /* hexa to dec*/
+        fileLengthStart = (fileLengthStart*256) + buffer[currentIndex++]; /* hexa to dec*/
     }
-    currentIndex += length;
+
     /*File name*/
 
     if (buffer[currentIndex++] != FILE_NAME){
