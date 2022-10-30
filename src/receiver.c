@@ -54,21 +54,21 @@ void stateMachineReceiver(char byteReceived, enum state * currentState, int * pr
 
 int receiveFrame(int fd,unsigned char* frame) {
     enum state currentState = START;
-    char buf[255];
+    unsigned char buf;
     int res =0, currentIndex= 0;
     int prevWasFlag = 0;
 
     do {
-        res = read(fd,buf,1);
+        res = read(fd,&buf,1);
         if (res  < 0) {
             return -1;
         }
 
         if (!res) continue;
 
-        stateMachineReceiver(buf[0],&currentState,&prevWasFlag);
+        stateMachineReceiver(buf,&currentState,&prevWasFlag);
         if (prevWasFlag && currentState == FLAG_RCV) currentIndex = 0;
-        if (currentState != START) frame[currentIndex++] = buf[0];
+        if (currentState != START) frame[currentIndex++] = buf;
 
     } while (currentState != STOP);
 

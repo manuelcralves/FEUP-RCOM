@@ -232,6 +232,7 @@ int appWrite(int fd, LinkLayer ll,const char * name) {
         controlPacket[currentIndex++] = name[i];
     }
 
+    printf("send start packet\n");
     /* Send start packet*/
     llwrite(controlPacket,currentIndex);
 

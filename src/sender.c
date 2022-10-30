@@ -82,21 +82,6 @@ void stateMachineSender(unsigned char byteReceived, enum state * currentState, u
   }
 }
 
-int writeInPort(int fd,const void* buf, size_t n) {
-
-    int b = 0;
-    int res = 0;
-
-    while (b != n) {
-        res = write(fd,buf+b,n-b);
-        
-        if (res < 0) { perror("couldnt write"); return -1;}
-
-        b+=res;
-    }   
-
-    return b;
-}
 
 int sendFrame(unsigned char* frame, int frameSize) {
     enum state currentState = START;
@@ -107,7 +92,7 @@ int sendFrame(unsigned char* frame, int frameSize) {
     unsigned char controlField;
 
     resW = writeInPort(fd,frame,frameSize);
-
+    
     alarm(3); // Set alarm to be trigerred in 3s
 
     do {

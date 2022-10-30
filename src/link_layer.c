@@ -70,14 +70,14 @@ int llopen(LinkLayer connectionParameters)
 
 
     if (myRole == LlTx){
-        if (sendInfoFrame(fd,A_SND,SET) < 0) return -1;
-        if (receiveInfoFrame(fd,A_RCVR,UAKN) < 0) return -1;
+        if (sendFrame1(fd,A_SND,SET) < 0) return -1;
+        if (receiveInfoFrame(fd,A_RCVR,UAKN)<0)return -1;
         return fd;
     }
 
     if (myRole== LlRx) {
         if (receiveInfoFrame(fd,A_SND,SET)<0) return -1;
-        if (sendInfoFrame(fd,A_RCVR,UAKN) < 0) return -1;
+        if (sendInfoFrame_r(fd,A_RCVR,UAKN) < 0) return -1;
         return fd;
     }
 
@@ -160,7 +160,7 @@ int llread(unsigned char *packet)
     
     /*Correct frame*/
     printf("manda RR do prox: %d\n",seqNum);
-    sendInfoFrame(fd,A_RCVR,RR(seqNum));
+    sendInfoFrame_r(fd,A_RCVR,RR(seqNum));
 
     return res - HEADER_BYTES;
 }
@@ -169,7 +169,7 @@ int llread(unsigned char *packet)
 // LLCLOSE
 ////////////////////////////////////////////////
 int llclose(int showStatistics)
-{
+{   /*
     switch(myRole) {
         case LlTx:
             if (sendInfoFrame(fd,A_SND,DISC) < 0) return -1; // the sender send the DISC command
@@ -185,7 +185,7 @@ int llclose(int showStatistics)
             if (receiveInfoFrame(fd,A_SND,UAKN) < 0) return -1; // the receiver receives UA
             break;
     }
-
+    */
     if ( tcsetattr(fd, TCSANOW, &oldtio) == -1) {
         perror("tcsetattr");
         exit(-1);
