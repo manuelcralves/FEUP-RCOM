@@ -11,7 +11,8 @@ int stuffing(const unsigned char *buf, int bufSize,unsigned char *newBuf);
 
 void stateMachineSender(unsigned char byteReceived, enum state * currentState, unsigned char * controlField);
 
-int sendFrame(unsigned char* frame, int frameSize);
+int sendDataFrame_t(unsigned char* frame, int frameSize);
 
+int sendControlFrame_t(int fd, unsigned char adressField,unsigned char controlField, unsigned char resAdressField, unsigned char resControlField);
 
 #endif

@@ -9,6 +9,10 @@ int destuffing(const unsigned char* buf, int bufSize, unsigned char* packet);
 
 void stateMachineReceiver(char byteReceived, enum state * currentState, int * prevWasFlag);
 
-int receiveFrame(int fd,unsigned char* frame);
+int receiveDataFrame_r(int fd,unsigned char* frame);
+
+int sendControlFrame_r(int fd, unsigned char adressField, unsigned char controlField);
+
+int receiveControlFrame_r(int fd, unsigned char adressField, unsigned char controlField);
 
 #endif

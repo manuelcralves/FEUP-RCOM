@@ -35,12 +35,12 @@ enum state {START, FLAG_RCV, A_RCV, C_RCV, BCC_OK, STOP};
 
 void stateMachine(char byteReceived, enum state * currentState, unsigned char addressField, unsigned char controlField);
 
-int sendInfoFrame_r(int fd, unsigned char adressField, unsigned char controlField);
+int sendControlFrame_r(int fd, unsigned char adressField, unsigned char controlField);
 
-int sendFrame1(int fd, unsigned char adressField,unsigned char controlField);
+int receiveControlFrame_r(int fd, unsigned char adressField, unsigned char controlField);
 
-int receiveInfoFrame(int fd, unsigned char adressField, unsigned char controlField);
-
+int sendControlFrame_t(int fd, unsigned char adressField,unsigned char controlField, unsigned char resAdressField, unsigned char resControlField);
+    
 int isHeaderWrong(unsigned char *buf,int seqNum);
 
 int isDuplicate(int fd,unsigned char *buf,int seqNum);

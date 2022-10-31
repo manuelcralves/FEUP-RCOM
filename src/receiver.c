@@ -52,7 +52,36 @@ void stateMachineReceiver(char byteReceived, enum state * currentState, int * pr
   }
 }
 
-int receiveFrame(int fd,unsigned char* frame) {
+int sendControlFrame_r(int fd, unsigned char adressField, unsigned char controlField) {
+  
+  unsigned char message[5];
+
+  message[0] = FLAG;
+  message[1] = adressField;
+  message[2] = controlField;
+  message[3] = BCC(adressField, controlField);
+  message[4] = FLAG;
+
+  int res = write(fd,message,5);
+  return res;
+}
+
+int receiveControlFrame_r(int fd, unsigned char adressField, unsigned char controlField) {
+    enum state current_state = START;
+    unsigned char buf;
+    int res = 0;
+    do {
+        res = read (fd,&buf,1);
+        if(res < 0) return -1;
+        if (!res) continue;
+        stateMachine(buf, &current_state, adressField, controlField);
+    } while(current_state != STOP);
+
+    return res;
+}
+
+
+int receiveDataFrame_r(int fd,unsigned char* frame) {
     enum state currentState = START;
     unsigned char buf;
     int res =0, currentIndex= 0;

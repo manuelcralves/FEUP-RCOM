@@ -60,7 +60,7 @@ int appRead (int fd, LinkLayer ll, const char *name) {
     }
 
     currentIndex += length+1;
-    printf("file length start: %d\n",fileLengthStart);
+
     /*File name*/
 
     if (buffer[currentIndex++] != FILE_NAME){
@@ -74,7 +74,6 @@ int appRead (int fd, LinkLayer ll, const char *name) {
         nameToCompare[i] = buffer[currentIndex++];
     }
     
-    printf("FIle length start: %d\n",fileLengthStart);
     while (currentPosition != fileLengthStart){
         res = llread(buffer);
         if (res  < 0) {
@@ -232,7 +231,7 @@ int appWrite(int fd, LinkLayer ll,const char * name) {
         controlPacket[currentIndex++] = name[i];
     }
 
-    printf("send start packet\n");
+   
     /* Send start packet*/
     llwrite(controlPacket,currentIndex);
 
@@ -259,7 +258,7 @@ int appWrite(int fd, LinkLayer ll,const char * name) {
             free(data);
             exit(-1);
         }
-        printf("resW da app layer: %d\n",resW);
+        
         currentPosition += resR;
         seqNum++;
         fseek(transmissorFptr, 0, SEEK_CUR);
@@ -289,14 +288,12 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     if (strcmp(role,"rx") == 0) {
         LinkLayerRole llrole = LlRx;
         ll.role = llrole;
-        printf("role rec\n");
         appRead(fd,ll,filename);
     }
 
     else if (strcmp(role,"tx")==0){
         LinkLayerRole llrole = LlTx;
         ll.role = llrole;
-        printf("role trans\n");
         appWrite(fd,ll,filename);
     }
 
