@@ -70,14 +70,13 @@ int llopen(LinkLayer connectionParameters)
 
 
     if (myRole == LlTx){
-        if (sendInfoFrame(fd,A_SND,SET) < 0) return -1;
-        if (receiveInfoFrame(fd,A_RCVR,UAKN) < 0) return -1;
+        if (sendControlFrame_t(fd,A_SND,SET,A_RCVR,UAKN) < 0) return -1;
         return fd;
     }
 
     if (myRole== LlRx) {
-        if (receiveInfoFrame(fd,A_SND,SET)<0) return -1;
-        if (sendInfoFrame(fd,A_RCVR,UAKN) < 0) return -1;
+        if (receiveControlFrame_r(fd,A_SND,SET)<0) return -1;
+        if (sendControlFrame_r(fd,A_RCVR,UAKN) < 0) return -1;
         return fd;
     }
 
@@ -109,15 +108,17 @@ int llwrite(const unsigned char *buf, int bufSize)
 
     newBuf[newBufSize-2] = bccData;
     newBuf[newBufSize-1] = FLAG;
+
     printf("\n-----\n");
-    //for (int i = 0; i < newBufSize;i++){printf("%x ",newBuf[i]);}
     printf("antes de dar stuff tamanho : %d\n",newBufSize);
+
     unsigned char *stuffed = malloc(newBufSize);
     newBufSize = stuffing(newBuf,newBufSize,stuffed);
+
     printf("depois de dar stuff tamanho : %d\n",newBufSize);
     printf("-----\n");
 
-    int res = sendFrame(stuffed,newBufSize);
+    int res = sendDataFrame_t(stuffed,newBufSize);
 
     free(stuffed);
     return res;
@@ -131,11 +132,10 @@ int llread(unsigned char *packet)
     int res;
     unsigned char buffer[1000];
 
-    res = receiveFrame(fd,buffer);/*receiveFrame puts the frame in the buffer var and returns its size*/
+    res = receiveDataFrame_r(fd,buffer); /*receiveFrame puts the frame in the buffer var and returns its size*/
     
     if (res < 0) {
         return -1; 
-        printf("res < 1");
     }
     printf("destuffing...\n");
     res = destuffing(buffer,res,packet);
@@ -160,7 +160,7 @@ int llread(unsigned char *packet)
     
     /*Correct frame*/
     printf("manda RR do prox: %d\n",seqNum);
-    sendInfoFrame(fd,A_RCVR,RR(seqNum));
+    sendControlFrame_r(fd,A_RCVR,RR(seqNum));
 
     return res - HEADER_BYTES;
 }
@@ -169,23 +169,21 @@ int llread(unsigned char *packet)
 // LLCLOSE
 ////////////////////////////////////////////////
 int llclose(int showStatistics)
-{
+{   
     switch(myRole) {
         case LlTx:
-            if (sendInfoFrame(fd,A_SND,DISC) < 0) return -1; // the sender send the DISC command
-            if (receiveInfoFrame(fd,A_RCVR,DISC) < 0) return -1; // the sender receives the DISC command sent by the receiver
-
-            if (sendInfoFrame(fd,A_SND,UAKN) < 0) return -1; // the sender sends UA 
+            if (sendControlFrame_t(fd,A_SND,DISC,A_RCVR,DISC) < 0) return -1; // the sender send the DISC command
+            if (sendControlFrame_r(fd,A_SND,UAKN) < 0) return -1; // the sender sends UA , its calling the 'receiver' function because this sender doesn't expect to receive a response from the receiver
             sleep(1);
             break;
         case LlRx:
-            if (receiveInfoFrame(fd,A_SND,DISC) < 0) return -1; // the receiver receives the DISC command
-            if (sendInfoFrame(fd,A_RCVR,DISC) < 0) return -1; // the receiver send the response to the sender
+            if (receiveControlFrame_r(fd,A_SND,DISC) < 0) return -1; // the receiver receives the DISC command
+            if (sendControlFrame_r(fd,A_RCVR,DISC) < 0) return -1; // the receiver send the response to the sender
 
-            if (receiveInfoFrame(fd,A_SND,UAKN) < 0) return -1; // the receiver receives UA
+            if (receiveControlFrame_r(fd,A_SND,UAKN) < 0) return -1; // the receiver receives UA
             break;
     }
-
+    
     if ( tcsetattr(fd, TCSANOW, &oldtio) == -1) {
         perror("tcsetattr");
         exit(-1);
@@ -196,6 +194,7 @@ int llclose(int showStatistics)
     if (showStatistics) {
         printf("show statistics");
     }
+
     close(fd);
 
     return 1;

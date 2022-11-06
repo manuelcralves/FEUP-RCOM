@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "link_layer.h"
 
 #define FLAG       0x7E
 #define ESC        0x7D
@@ -34,10 +35,12 @@ enum state {START, FLAG_RCV, A_RCV, C_RCV, BCC_OK, STOP};
 
 void stateMachine(char byteReceived, enum state * currentState, unsigned char addressField, unsigned char controlField);
 
-int sendInfoFrame(int fd, unsigned char adressField, unsigned char controlField);
+int sendControlFrame_r(int fd, unsigned char adressField, unsigned char controlField);
 
-int receiveInfoFrame(int fd, unsigned char adressField, unsigned char controlField);
+int receiveControlFrame_r(int fd, unsigned char adressField, unsigned char controlField);
 
+int sendControlFrame_t(int fd, unsigned char adressField,unsigned char controlField, unsigned char resAdressField, unsigned char resControlField);
+    
 int isHeaderWrong(unsigned char *buf,int seqNum);
 
 int isDuplicate(int fd,unsigned char *buf,int seqNum);
@@ -45,6 +48,8 @@ int isDuplicate(int fd,unsigned char *buf,int seqNum);
 int isSeqNumWrong(unsigned char *buf,int seqNum);
 
 int isDataBccWrong(int fd,unsigned char *buf, int bufSize,int seqNum);
+
+int writeInPort(int fd,const void* buf, size_t n);
 
 const char* getState (enum state s);
 

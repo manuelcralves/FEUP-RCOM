@@ -1,5 +1,10 @@
 #include "../include/utils.h"
 
+extern unsigned int flag;
+extern int numTries;
+extern int counter;
+extern int timeout;
+
 void stateMachine(char byteReceived, enum state * currentState, unsigned char addressField, unsigned char controlField) {
   switch (*currentState) {
     case START:
@@ -28,31 +33,6 @@ void stateMachine(char byteReceived, enum state * currentState, unsigned char ad
   }
 }
 
-int sendInfoFrame(int fd, unsigned char adressField, unsigned char controlField) {
-  unsigned char message[5];
-
-  message[0] = FLAG;
-  message[1] = adressField;
-  message[2] = controlField;
-  message[3] = BCC(adressField, controlField);
-  message[4] = FLAG;
-  
-  return write(fd, message, 5);
-}
-
-int receiveInfoFrame(int fd, unsigned char adressField, unsigned char controlField) {
-    enum state current_state = START;
-    char buf[255];
-    int res = 0;
-    do {
-        
-        if((res = read(fd, buf, 1)) < 0) return -1;
-        if (!res) continue;
-        stateMachine(buf[0], &current_state, adressField, controlField);
-    } while(current_state != STOP);
-
-    return res;
-}
 
 int isHeaderWrong(unsigned char *buf, int seqNum) {
   if (buf[0] != FLAG || buf[1] != A_SND || buf[3] != (BCC(A_SND,SEQ_NUM(seqNum)))){
@@ -66,7 +46,7 @@ int isDuplicate(int fd,unsigned char *buf,int seqNum) {
   if (seqNum == 0) prevSeqNum = 1;
 
   if (buf[2] == SEQ_NUM(prevSeqNum)) {
-    sendInfoFrame(fd,A_RCVR,RR(seqNum));
+    sendControlFrame_r(fd,A_RCVR,RR(seqNum));
     return 1;
   }
   return 0;
@@ -79,19 +59,33 @@ int isSeqNumWrong(unsigned char *buf,int seqNum) {
 
 int isDataBccWrong(int fd,unsigned char *buf, int bufSize,int seqNum) {
   unsigned char dataBcc = 0x00;
-  printf("------\n");
+
   for (size_t i = 4; i < bufSize-2;i++){
-    printf("%x ",buf[i]);
     dataBcc ^= buf[i];
   }
-  printf("%x\n",dataBcc);
+
   if (buf[bufSize-2] != dataBcc){
-    printf("entrou aqui\n");
-    sendInfoFrame(fd,A_RCVR,REJ(seqNum));
+    sendControlFrame_r(fd,A_RCVR,REJ(seqNum));
     return 1;
   }
 
   return 0;
+}
+
+int writeInPort(int fd,const void* buf, size_t n) {
+
+    int b = 0;
+    int res = 0;
+
+    while (b != n) {
+        res = write(fd,buf+b,n-b);
+        
+        if (res < 0) { perror("couldnt write"); return -1;}
+
+        b+=res;
+    }   
+
+    return b;
 }
 
 
@@ -104,6 +98,6 @@ const char* getState (enum state s){
     case C_RCV : return "3";
     case BCC_OK : return "4";
     case STOP : return "5";
-
+    default : return "";
   }
 }

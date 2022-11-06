@@ -82,23 +82,43 @@ void stateMachineSender(unsigned char byteReceived, enum state * currentState, u
   }
 }
 
-int writeInPort(int fd,const void* buf, size_t n) {
+int sendControlFrame_t(int fd, unsigned char adressField,unsigned char controlField, unsigned char resAdressField, unsigned char resControlField) {
+    enum state currentState = START;
+    unsigned char buf;
+    int resR= 0, resW=0;
+    flag = 0;
+    counter = 0;
+    unsigned char frame[5];
+    frame[0] = FLAG;
+    frame[1] = adressField;
+    frame[2] = controlField;
+    frame[3] = BCC(adressField, controlField);
+    frame[4] = FLAG;
 
-    int b = 0;
-    int res = 0;
+    resW = writeInPort(fd,frame,5);
+    
+    alarm(3); // Set alarm to be trigerred in 3s
 
-    while (b != n) {
-        res = write(fd,buf+b,n-b);
-        
-        if (res < 0) { perror("couldnt write"); return -1;}
+    do {
+        if (flag){
+            alarm(3);
+            flag = FALSE;
+            resW = writeInPort(fd,frame,5);
+        }
+        resR = read(fd,&buf,1);
+        if (!resR) continue;
+        stateMachine(buf,&currentState,resAdressField,resControlField);
+    } while (currentState != STOP && counter < numTries);
 
-        b+=res;
-    }   
+    if (counter >= numTries) return -1;
+    
+    alarm (0); /*write successfull*/
 
-    return b;
+    return resW;
+
 }
 
-int sendFrame(unsigned char* frame, int frameSize) {
+int sendDataFrame_t(unsigned char* frame, int frameSize) {
     enum state currentState = START;
     unsigned char buf;
     int resR= 0, resW=0;
@@ -107,7 +127,7 @@ int sendFrame(unsigned char* frame, int frameSize) {
     unsigned char controlField;
 
     resW = writeInPort(fd,frame,frameSize);
-
+    
     alarm(3); // Set alarm to be trigerred in 3s
 
     do {
@@ -117,17 +137,17 @@ int sendFrame(unsigned char* frame, int frameSize) {
             resW = writeInPort(fd,frame,frameSize);
         }
         resR = read(fd,&buf,1);
-        //printf("byte rec: %x\n",buf);
         if (!resR) continue;
         stateMachineSender(buf,&currentState,&controlField);
     } while (currentState != STOP && counter < numTries);
+
     alarm (0); /*write successfull*/
 
     int nextSeqNum = (seqNum) ? 0:1;
 
     if (currentState == STOP) {
         if (controlField == (REJ(seqNum))) { /* retransmissão */
-            return sendFrame(frame,frameSize);
+            return sendDataFrame_t(frame,frameSize);
         }
         if (controlField == (RR(nextSeqNum))) {
             seqNum = nextSeqNum;

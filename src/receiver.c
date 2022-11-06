@@ -52,23 +52,52 @@ void stateMachineReceiver(char byteReceived, enum state * currentState, int * pr
   }
 }
 
-int receiveFrame(int fd,unsigned char* frame) {
+int sendControlFrame_r(int fd, unsigned char adressField, unsigned char controlField) {
+  
+  unsigned char message[5];
+
+  message[0] = FLAG;
+  message[1] = adressField;
+  message[2] = controlField;
+  message[3] = BCC(adressField, controlField);
+  message[4] = FLAG;
+
+  int res = write(fd,message,5);
+  return res;
+}
+
+int receiveControlFrame_r(int fd, unsigned char adressField, unsigned char controlField) {
+    enum state current_state = START;
+    unsigned char buf;
+    int res = 0;
+    do {
+        res = read (fd,&buf,1);
+        if(res < 0) return -1;
+        if (!res) continue;
+        stateMachine(buf, &current_state, adressField, controlField);
+    } while(current_state != STOP);
+
+    return res;
+}
+
+
+int receiveDataFrame_r(int fd,unsigned char* frame) {
     enum state currentState = START;
-    char buf[255];
+    unsigned char buf;
     int res =0, currentIndex= 0;
     int prevWasFlag = 0;
 
     do {
-        res = read(fd,buf,1);
+        res = read(fd,&buf,1);
         if (res  < 0) {
             return -1;
         }
 
         if (!res) continue;
 
-        stateMachineReceiver(buf[0],&currentState,&prevWasFlag);
+        stateMachineReceiver(buf,&currentState,&prevWasFlag);
         if (prevWasFlag && currentState == FLAG_RCV) currentIndex = 0;
-        if (currentState != START) frame[currentIndex++] = buf[0];
+        if (currentState != START) frame[currentIndex++] = buf;
 
     } while (currentState != STOP);
 
