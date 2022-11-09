@@ -8,20 +8,6 @@
 
 extern int fd;
 
-LinkLayerRole getRole(const char *role)
-{
-  if (strcmp(role, "tx") == 0)
-    return LlTx;
-  else if (strcmp(role, "rx") == 0)
-    return LlRx;
-  else
-  {
-    printf("Invalid Role!\n");
-
-    return (LinkLayerRole)NULL;
-  }
-}
-
 int appRead (int fd, LinkLayer ll, const char *name) {
     unsigned char *buffer = malloc(1000);
     int res, currentIndex = 4;
