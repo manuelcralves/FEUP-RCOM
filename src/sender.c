@@ -98,19 +98,6 @@ int sendControlFrame_t(int fd, unsigned char adressField,unsigned char controlFi
     resW = writeInPort(fd,frame,5);
     
     alarm(3); // Set alarm to be trigerred in 3s
-<<<<<<< HEAD
-
-    do {
-        if (flag){
-            alarm(3);
-            flag = FALSE;
-            resW = writeInPort(fd,frame,5);
-        }
-        resR = read(fd,&buf,1);
-        if (!resR) continue;
-        stateMachine(buf,&currentState,resAdressField,resControlField);
-    } while (currentState != STOP && counter <= numTries);
-=======
 
     do {
         if (flag){
@@ -125,7 +112,6 @@ int sendControlFrame_t(int fd, unsigned char adressField,unsigned char controlFi
 
     if (counter >= numTries) return -1;
     
->>>>>>> master
     alarm (0); /*write successfull*/
 
     return resW;
