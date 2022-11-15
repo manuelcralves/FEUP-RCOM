@@ -8,20 +8,6 @@
 
 extern int fd;
 
-LinkLayerRole getRole(const char *role)
-{
-  if (strcmp(role, "tx") == 0)
-    return LlTx;
-  else if (strcmp(role, "rx") == 0)
-    return LlRx;
-  else
-  {
-    printf("Invalid Role!\n");
-
-    return (LinkLayerRole)NULL;
-  }
-}
-
 int appRead (int fd, LinkLayer ll, const char *name) {
     unsigned char *buffer = malloc(1000);
     int res, currentIndex = 4;
@@ -29,7 +15,10 @@ int appRead (int fd, LinkLayer ll, const char *name) {
     unsigned int nameSize = 0;
 
     int open = llopen(ll);
-    if (open == -1) return;
+    if (open == -1) {
+        llclose(0);
+        return -1;
+    }
 
     FILE *receptorFptr = fopen(name,"wb");
 
@@ -104,7 +93,7 @@ int appRead (int fd, LinkLayer ll, const char *name) {
         }
 
         currentPosition += dataLength;
-        printf("currPOs: %d\n",currentPosition);
+        printf("currPOs: %ld\n",currentPosition);
         if (fwrite(data,dataLength,1,receptorFptr) < 0){
             free(data);
             free(nameToCompare);
@@ -147,7 +136,7 @@ int appRead (int fd, LinkLayer ll, const char *name) {
     }
 
     currentIndex += length +1;
-    printf("file length end: %d\n",fileLengthEnd);
+    printf("file length end: %ld\n",fileLengthEnd);
 
     if (fileLengthEnd != fileLengthStart){
         free(nameToCompare);
@@ -177,7 +166,7 @@ int appRead (int fd, LinkLayer ll, const char *name) {
     }
     
     free(nameToCompare);
-    if (llclose(fd) < 0) {
+    if (llclose(0) < 0) {
         return -1;
     }
     return 0;
@@ -201,7 +190,10 @@ int appWrite(int fd, LinkLayer ll,const char * name) {
     fseek (transmissorFptr,0L,SEEK_END); // 0L = 0 long int, EOF
 
     int open = llopen(ll);
-    if (open == -1) return;
+    if (open == -1) {
+        llclose(0);
+        return -1;
+    }
 
     long int fileSize = ftell(transmissorFptr);
     long int auxFileSize = fileSize;
@@ -268,7 +260,7 @@ int appWrite(int fd, LinkLayer ll,const char * name) {
     llwrite(controlPacket,currentIndex);
     free(data);
 
-    if (llclose(fd) < 0) {
+    if (llclose(0) < 0) {
         return -1;
     }
     

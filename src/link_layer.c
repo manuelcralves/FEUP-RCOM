@@ -1,6 +1,6 @@
 // Link layer protocol implementation
 
-#include "link_layer.h"
+#include "../include/link_layer.h"
 #include "sender.h"
 #include "receiver.h"
 #include "../include/utils.h"
@@ -55,7 +55,7 @@ int llopen(LinkLayer connectionParameters)
     newtio.c_oflag = 0;
 
     // Set input mode (non-canonical, no echo,...)
-    newtio.c_cflag = 0;
+    newtio.c_lflag = 0;
     newtio.c_cc[VTIME] = 1;
     newtio.c_cc[VMIN] = 0;
 

@@ -98,6 +98,6 @@ const char* getState (enum state s){
     case C_RCV : return "3";
     case BCC_OK : return "4";
     case STOP : return "5";
-
+    default : return "";
   }
 }
